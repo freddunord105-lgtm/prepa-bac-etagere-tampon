@@ -1,5 +1,6 @@
+import { GAS_URL } from "./config";
+
 export async function onRequestPost({ request }) {
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbxQbSVsiHxOdFJg58OqhABq1dPQu1ykzkuhOwr_Gd5oclFdRSx5TwZt51WSOJVML14s/exec";
 
   try {
     const form = await request.formData();
