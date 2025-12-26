@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SAMEMO — Bac Tampon</title>
+<title>SAMEMO — Prépa Bac Tampon</title>
 
 <style>
 :root{
@@ -21,25 +21,26 @@ body{
   background:var(--bg);
 }
 .app{max-width:480px;margin:auto;padding:16px}
+.header{text-align:center;margin-bottom:12px}
+.logo{font-size:28px;font-weight:900;color:var(--primary)}
+.subtitle{font-size:14px;color:#475569}
+
 .card{
   background:var(--card);
   border-radius:14px;
   padding:16px;
   margin-bottom:12px;
-  box-shadow:0 6px 16px rgba(0,0,0,.06);
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
 }
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  font-weight:800;
-  background:var(--primary);
-  color:#fff;
-  margin-top:8px;
+
+.list-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
 }
-.hidden{display:none}
+.list-item:last-child{border-bottom:none}
+
 .badge{
+  display:inline-block;
   padding:4px 8px;
   border-radius:8px;
   font-size:12px;
@@ -47,33 +48,57 @@ button{
 }
 .low{background:#fee2e2;color:#b91c1c}
 .ok{background:#dcfce7;color:#15803d}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-weight:800;
+  margin-top:8px;
+  cursor:pointer;
+}
+.primary{background:var(--primary);color:#fff}
+.success{background:var(--success);color:#fff}
+.error{background:var(--error);color:#fff}
+.hidden{display:none}
 .center{text-align:center}
 </style>
 </head>
 
 <body>
+
 <div class="app">
 
-<div class="card center">
-  <h2>SAMEMO</h2>
-  <div>Préparation bacs tampon</div>
-</div>
+  <div class="header">
+    <div class="logo">SAMEMO</div>
+    <div class="subtitle">Préparation Bac Tampon</div>
+  </div>
 
-<div id="message" class="card hidden center"></div>
+  <!-- MESSAGE -->
+  <div id="message" class="card hidden center"></div>
 
-<!-- LISTE BACS -->
-<div id="bacsList" class="card">
-  <h3>Bacs à remplir</h3>
-  <div id="bacs"></div>
-</div>
+  <!-- LISTE BACS -->
+  <div id="screen-bacs" class="card">
+    <h3>Bacs à remplir</h3>
+    <div id="bacs"></div>
+  </div>
 
-<!-- SCAN -->
-<div id="scanScreen" class="card hidden">
-  <h3 id="scanTitle" class="center"></h3>
-  <div id="qr-reader" style="width:100%;min-height:260px"></div>
-  <div id="scanInfo" class="center" style="margin-top:10px;font-weight:700"></div>
-  <button id="backBtn">⬅ Retour</button>
-</div>
+  <!-- SCAN BAC -->
+  <div id="screen-bac-scan" class="card hidden">
+    <h3 class="center">Scanner le bac</h3>
+    <div id="qr-bac" style="width:100%;min-height:260px"></div>
+    <button class="primary" onclick="backToBacs()">⬅ Retour</button>
+  </div>
+
+  <!-- SCAN PRODUITS -->
+  <div id="screen-product-scan" class="card hidden">
+    <h3 class="center">Scanner les produits</h3>
+    <p class="center"><strong id="prod-name"></strong></p>
+    <p class="center" id="prod-progress"></p>
+    <div id="qr-product" style="width:100%;min-height:260px"></div>
+    <button class="primary" onclick="finishBac()">✅ Bac rempli</button>
+  </div>
 
 </div>
 
@@ -84,147 +109,165 @@ button{
 const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
 
 /* ================= STATE ================= */
-let bacsData = [];
-let scanner = null;
-let scannerRunning = false;
+let bacs = [];
 let currentBac = null;
-let qty = 0;
 let qtyTarget = 0;
-let mode = "BAC";
+let qtyCurrent = 0;
+let bacScanner = null;
+let productScanner = null;
+let bacScannerStarted = false;
+let productScannerStarted = false;
 
-/* ================= MESSAGE ================= */
-function showMessage(txt,type){
+/* ================= LOAD BACS ================= */
+async function loadBacs(){
+  const res = await fetch(API_URL + "?action=bacsTampon");
+  const json = await res.json();
+  bacs = Array.isArray(json) ? json : [];
+  renderBacs();
+}
+
+function renderBacs(){
+  const div = document.getElementById("bacs");
+  div.innerHTML = "";
+
+  if(!bacs.length){
+    div.innerHTML = "<em>Aucun bac à remplir</em>";
+    return;
+  }
+
+  bacs.forEach(b=>{
+    const code = b.BAC_ID || b.Bac_Code;
+    const name = b.PRODUIT_NOM || b.Produit_Label;
+    const having = Number(b.QTY_ACTUEL || b.Qty_Having);
+    const target = Number(b.QTY_MAX || b.Qty_Target);
+
+    const item = document.createElement("div");
+    item.className="list-item";
+    item.innerHTML=`
+      <strong>${code}</strong><br>
+      ${name}<br>
+      ${having} / ${target}
+      <span class="badge ${having<target?'low':'ok'}">
+        ${having<target?'À remplir':'OK'}
+      </span>
+      <button class="primary" onclick="scanBac('${code}',${having},${target},'${name}')">
+        Scanner bac
+      </button>
+    `;
+    div.appendChild(item);
+  });
+}
+
+/* ================= SCAN BAC ================= */
+function scanBac(code, having, target, name){
+  currentBac = code;
+  qtyCurrent = having;
+  qtyTarget = target;
+
+  document.getElementById("screen-bacs").classList.add("hidden");
+  document.getElementById("screen-bac-scan").classList.remove("hidden");
+
+  bacScanner = new Html5Qrcode("qr-bac");
+
+  navigator.mediaDevices.getUserMedia({video:true}).then(()=>{
+    bacScanner.start(
+      {facingMode:"environment"},
+      {fps:10,qrbox:250},
+      txt=>{
+        if(txt === currentBac){
+          stopBacScanner();
+          startProductScan(name);
+        }
+      }
+    );
+    bacScannerStarted = true;
+  }).catch(()=>{
+    showMessage("Caméra refusée","error");
+    backToBacs();
+  });
+}
+
+function stopBacScanner(){
+  if(bacScanner && bacScannerStarted){
+    bacScanner.stop().catch(()=>{});
+    bacScannerStarted=false;
+  }
+}
+
+/* ================= SCAN PRODUITS ================= */
+function startProductScan(productName){
+  document.getElementById("screen-bac-scan").classList.add("hidden");
+  document.getElementById("screen-product-scan").classList.remove("hidden");
+
+  document.getElementById("prod-name").textContent = productName;
+  updateProgress();
+
+  productScanner = new Html5Qrcode("qr-product");
+
+  navigator.mediaDevices.getUserMedia({video:true}).then(()=>{
+    productScanner.start(
+      {facingMode:"environment"},
+      {fps:10,qrbox:250},
+      ()=> {
+        if(qtyCurrent < qtyTarget){
+          qtyCurrent++;
+          updateProgress();
+        }
+      }
+    );
+    productScannerStarted = true;
+  }).catch(()=>{
+    showMessage("Caméra refusée","error");
+    backToBacs();
+  });
+}
+
+function updateProgress(){
+  document.getElementById("prod-progress").textContent =
+    `Quantité : ${qtyCurrent} / ${qtyTarget}`;
+}
+
+/* ================= FIN ================= */
+function finishBac(){
+  if(productScanner && productScannerStarted){
+    productScanner.stop().catch(()=>{});
+    productScannerStarted=false;
+  }
+
+  fetch(API_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      action:"updateBac",
+      bac:currentBac
+    })
+  });
+
+  showMessage("Bac rempli ✅","success");
+  backToBacs();
+}
+
+function backToBacs(){
+  stopBacScanner();
+  if(productScanner && productScannerStarted){
+    productScanner.stop().catch(()=>{});
+    productScannerStarted=false;
+  }
+
+  document.getElementById("screen-bac-scan").classList.add("hidden");
+  document.getElementById("screen-product-scan").classList.add("hidden");
+  document.getElementById("screen-bacs").classList.remove("hidden");
+  loadBacs();
+}
+
+/* ================= UI ================= */
+function showMessage(t,type){
   const m=document.getElementById("message");
-  m.textContent=txt;
+  m.textContent=t;
   m.className="card "+type;
   m.classList.remove("hidden");
   setTimeout(()=>m.classList.add("hidden"),2000);
 }
-
-/* ================= SAFE STOP ================= */
-function safeStopScanner(){
-  if(scanner && scannerRunning){
-    scanner.stop()
-      .then(()=>{ scannerRunning=false; })
-      .catch(()=>{});
-  }
-}
-
-/* ================= LOAD BACS ================= */
-async function loadBacs(){
-  try{
-    const res = await fetch(API_URL+"?action=bacsTampon");
-    const json = await res.json();
-    bacsData = Array.isArray(json) ? json : (json.data || []);
-    renderBacs();
-  }catch{
-    showMessage("Erreur API","error");
-  }
-}
-
-/* ================= RENDER ================= */
-function renderBacs(){
-  const div=document.getElementById("bacs");
-  div.innerHTML="";
-  if(bacsData.length===0){
-    div.innerHTML="<em>Aucun bac à remplir</em>";
-    return;
-  }
-
-  bacsData.forEach(b=>{
-    const need=b.Qty_Having<b.Qty_Target;
-    div.innerHTML+=`
-      <div style="margin-bottom:10px">
-        <strong>${b.Bac_Code}</strong><br>
-        ${b.Produit_Label}<br>
-        ${b.Qty_Having} / ${b.Qty_Target}
-        <span class="badge ${need?'low':'ok'}">${need?'À remplir':'OK'}</span>
-        <button onclick="startBacScan('${b.Bac_Code}',${b.Qty_Having},${b.Qty_Target})">
-          Scanner bac
-        </button>
-      </div>`;
-  });
-}
-
-/* ================= START BAC ================= */
-function startBacScan(code,have,target){
-  currentBac=code;
-  qty=have;
-  qtyTarget=target;
-  mode="BAC";
-
-  document.getElementById("bacsList").classList.add("hidden");
-  document.getElementById("scanScreen").classList.remove("hidden");
-  document.getElementById("scanTitle").textContent="Scanner le bac";
-  document.getElementById("scanInfo").textContent="";
-
-  startScanner();
-}
-
-/* ================= START SCANNER ================= */
-function startScanner(){
-  scanner = new Html5Qrcode("qr-reader");
-  scannerRunning = false;
-
-  scanner.start(
-    { facingMode:"environment" },
-    { fps:10, qrbox:250 },
-    onScan,
-    ()=>{}
-  ).then(()=>{
-    scannerRunning = true;
-  }).catch(()=>{
-    showMessage("Caméra refusée","error");
-    back();
-  });
-}
-
-/* ================= ON SCAN ================= */
-function onScan(code){
-  if(mode==="BAC"){
-    if(code!==currentBac) return;
-
-    safeStopScanner();
-    mode="PRODUIT";
-
-    document.getElementById("scanTitle").textContent="Scanner les produits";
-    document.getElementById("scanInfo").textContent=`${qty} / ${qtyTarget}`;
-
-    startScanner();
-  }
-  else if(mode==="PRODUIT"){
-    qty++;
-    document.getElementById("scanInfo").textContent=`${qty} / ${qtyTarget}`;
-
-    fetch(API_URL,{
-      method:"POST",
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        action:"scanProduit",
-        bac:currentBac,
-        produit:code
-      })
-    });
-
-    if(qty>=qtyTarget){
-      safeStopScanner();
-      showMessage("Bac rempli ✅","success");
-      setTimeout(()=>{
-        back();
-        loadBacs();
-      },1200);
-    }
-  }
-}
-
-/* ================= BACK ================= */
-function back(){
-  safeStopScanner();
-  document.getElementById("scanScreen").classList.add("hidden");
-  document.getElementById("bacsList").classList.remove("hidden");
-}
-
-document.getElementById("backBtn").onclick=back;
 
 /* ================= INIT ================= */
 loadBacs();
