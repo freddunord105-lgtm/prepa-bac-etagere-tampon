@@ -1,5 +1,5 @@
 export async function onRequestPost({ request }) {
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbyRLTAJteubhXuFwRXyIaK3FIqC7aEmLT6Mr7aUjef0q8yM-Tvd7E6hFw8q4hGDpOzy/exec";
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbxsHiBMzEZwLZN_cg-farnblXkaC69AoJxL1v7tmi9RH4-H15KOl9iOCe8U9q3Tbnpt/exec";
 
   try {
     const form = await request.formData();
