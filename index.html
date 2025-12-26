@@ -3,93 +3,265 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SAMEMO — Scanner</title>
+<title>SAMEMO — Prépa Bac Tampon</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0f766e">
 
 <style>
+:root{
+  --primary:#0f766e;
+  --success:#16a34a;
+  --warning:#f59e0b;
+  --error:#dc2626;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --disabled:#94a3b8;
+}
+*{box-sizing:border-box}
 body{
   margin:0;
-  background:#0f172a;
-  color:#fff;
-  font-family:system-ui,sans-serif;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100vh;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
 }
-.box{
-  text-align:center;
+.app{max-width:480px;margin:auto;padding:16px}
+.header{text-align:center;margin-bottom:12px}
+.logo{font-size:28px;font-weight:900;color:var(--primary)}
+.subtitle{font-size:14px;color:#475569}
+
+.card{
+  background:var(--card);
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:12px;
+  box-shadow:0 8px 20px rgba(0,0,0,.06);
 }
-h1{
-  font-size:28px;
-  margin-bottom:8px;
+
+.list-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
 }
-p{
-  opacity:.8;
+.list-item:last-child{border-bottom:none}
+
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:700;
 }
-.error{
-  color:#f87171;
-  margin-top:12px;
+.badge.low{background:#fee2e2;color:#b91c1c}
+.badge.ok{background:#dcfce7;color:#15803d}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-weight:800;
+  margin-top:8px;
+  cursor:pointer;
 }
+.primary{background:var(--primary);color:#fff}
+.success{background:var(--success);color:#fff}
+.error{background:var(--error);color:#fff}
+.hidden{display:none}
+.center{text-align:center}
 </style>
 </head>
 
 <body>
-<div class="box">
-  <h1>SAMEMO</h1>
-  <p>Scanne un code pour continuer</p>
-  <div id="reader" style="width:280px;margin:auto"></div>
-  <div id="msg" class="error"></div>
+
+<div class="app">
+
+  <div class="header">
+    <div class="logo">SAMEMO</div>
+    <div class="subtitle">Préparation — Bacs Tampon</div>
+  </div>
+
+  <div id="message" class="card hidden center"></div>
+
+  <!-- LISTE DES BACS -->
+  <div id="bacsList" class="card">
+    <h3>Bacs à compléter</h3>
+    <div id="bacs"></div>
+  </div>
+
+  <!-- SCAN -->
+  <div id="scanScreen" class="card hidden">
+    <h3 class="center">Scanner le bac</h3>
+    <div id="qr-reader" style="width:100%;min-height:260px"></div>
+    <div id="scanResult" class="center" style="margin-top:10px;font-weight:700"></div>
+    <button id="backBtn" class="primary">⬅ Retour</button>
+  </div>
+
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
-const msg = document.getElementById("msg");
+/* ================= CONFIG ================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
 
-function route(code){
-  code = code.trim();
+let bacsData = [];
+let scanner = null;
+let currentBac = null;
 
-  // 📦 COMMANDE
-  if(code.startsWith("CMD-")){
-    location.href = `/prepa-cmd.html?cmd=${encodeURIComponent(code)}`;
-    return;
+/* ================= LOAD ================= */
+async function loadBacs(){
+  try{
+    const res = await fetch(API_URL + "?action=bacsTampon");
+    const json = await res.json();
+
+    // 🔐 blindage total
+    if(Array.isArray(json)){
+      bacsData = json;
+    }else if(json && Array.isArray(json.data)){
+      bacsData = json.data;
+    }else{
+      bacsData = [];
+      console.warn("API inattendue :", json);
+    }
+
+    renderBacs();
+
+  }catch(err){
+    console.error(err);
+    bacsData = [];
+    renderBacs();
+    showMessage("Erreur API", "error");
   }
-
-  // 🧺 BAC TAMPON
-  if(code.startsWith("BAC-")){
-    location.href = `/prepa-bac.html?bac=${encodeURIComponent(code)}`;
-    return;
-  }
-
-  // 👤 RÔLE
-  if(code.startsWith("ROLE:")){
-    const role = code.split(":")[1];
-    localStorage.setItem("role", role);
-    location.href = `/prepa-${role.toLowerCase()}.html`;
-    return;
-  }
-
-  // 🏷️ PRODUIT (EAN)
-  if(/^\d{8,14}$/.test(code)){
-    location.href = `/scan-produit.html?ean=${code}`;
-    return;
-  }
-
-  msg.textContent = "Code non reconnu";
 }
 
-const scanner = new Html5Qrcode("reader");
+/* ================= RENDER ================= */
+function renderBacs(){
+  const div = document.getElementById("bacs");
+  div.innerHTML = "";
 
-scanner.start(
-  { facingMode:"environment" },
-  { fps:10, qrbox:250 },
-  code => {
+  if(!Array.isArray(bacsData) || bacsData.length === 0){
+    div.innerHTML = "<em>Aucun bac à compléter 👍</em>";
+    return;
+  }
+
+  bacsData.forEach(b=>{
+    const bacCode =
+      b.Bac_Code || b.BAC_ID || "BAC-?";
+
+    const produit =
+      b.Produit_Label || b.PRODUIT_NOM || "Produit";
+
+    const qtyHaving =
+      Number(b.Qty_Having ?? b.QTY_ACTUEL ?? 0);
+
+    const qtyTarget =
+      Number(b.Qty_Target ?? b.QTY_MAX ?? 0);
+
+    const needFill = qtyHaving < qtyTarget;
+
+    const item = document.createElement("div");
+    item.className = "list-item";
+
+    item.innerHTML = `
+      <strong>${bacCode}</strong><br>
+      ${produit}<br>
+      ${qtyHaving} / ${qtyTarget}
+      <span class="badge ${needFill ? 'low' : 'ok'}">
+        ${needFill ? 'À remplir' : 'OK'}
+      </span>
+      <button class="primary" onclick="startScan('${bacCode}')">
+        📷 Scanner ce bac
+      </button>
+    `;
+
+    div.appendChild(item);
+  });
+}
+
+/* ================= SCAN ================= */
+function startScan(bac){
+  currentBac = bac;
+
+  document.getElementById("bacsList").classList.add("hidden");
+  document.getElementById("scanScreen").classList.remove("hidden");
+  document.getElementById("scanResult").textContent = "";
+
+  scanner = new Html5Qrcode("qr-reader");
+
+  scanner.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    code => onScanned(code),
+    () => {}
+  ).then(() => {
+    scannerRunning = true;
+  }).catch(err => {
+    console.warn("Caméra refusée", err);
+    scannerRunning = false;
+
+    showMessage("📷 Caméra refusée — retour à la liste", "error");
+
+    setTimeout(()=>{
+      document.getElementById("scanScreen").classList.add("hidden");
+      document.getElementById("bacsList").classList.remove("hidden");
+    }, 1200);
+  });
+}
+
+
+function onScanned(code){
+  if(code === currentBac){
     scanner.stop();
-    route(code);
-  },
-  () => {}
-).catch(err=>{
-  msg.textContent = "Caméra refusée";
-});
+    document.getElementById("scanResult").textContent =
+      "✅ Bac reconnu : " + code;
+    updateBac(code);
+  }
+}
+
+/* ================= UPDATE ================= */
+async function updateBac(code){
+  try{
+    await fetch(API_URL,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        action:"updateBac",
+        bac:code
+      })
+    });
+
+    showMessage("Bac mis à jour ✅","success");
+
+    setTimeout(()=>{
+      document.getElementById("scanScreen").classList.add("hidden");
+      document.getElementById("bacsList").classList.remove("hidden");
+      loadBacs();
+    },1200);
+
+  }catch(err){
+    console.error(err);
+    showMessage("Erreur mise à jour","error");
+  }
+}
+
+/* ================= BACK ================= */
+document.getElementById("backBtn").onclick = ()=>{
+  if(scanner) scanner.stop();
+  document.getElementById("scanScreen").classList.add("hidden");
+  document.getElementById("bacsList").classList.remove("hidden");
+};
+
+/* ================= MESSAGE ================= */
+function showMessage(txt,type){
+  const m = document.getElementById("message");
+  m.textContent = txt;
+  m.className = "card " + type;
+  m.classList.remove("hidden");
+  setTimeout(()=>m.classList.add("hidden"),2500);
+}
+
+/* ================= INIT ================= */
+loadBacs();
 </script>
+
 </body>
 </html>
