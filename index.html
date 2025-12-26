@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SAMEMO — Prépa Bac Tampon</title>
+<meta name="theme-color" content="#0f766e">
+<link rel="manifest" href="/manifest.json">
 
 <style>
 :root{
@@ -15,127 +17,95 @@
   --card:#ffffff;
   --border:#e5e7eb;
   --muted:#64748b;
-  --shadow:0 10px 26px rgba(0,0,0,.07);
 }
 *{box-sizing:border-box}
 body{
   margin:0;
   font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
   background:var(--bg);
-  color:#0f172a;
 }
 .app{max-width:520px;margin:auto;padding:16px}
-.header{display:flex;align-items:center;justify-content:center;margin:10px 0 14px}
-.logo{font-size:30px;font-weight:950;letter-spacing:.5px;color:var(--primary)}
-.sub{margin:-6px 0 14px;text-align:center;color:var(--muted);font-size:14px}
+.header{
+  text-align:center;
+  margin-bottom:12px;
+}
+.logo{
+  font-size:28px;
+  font-weight:900;
+  color:var(--primary);
+  letter-spacing:.6px;
+}
+.subtitle{font-size:14px;color:var(--muted)}
 .card{
   background:var(--card);
-  border:1px solid rgba(0,0,0,.04);
-  border-radius:16px;
+  border-radius:14px;
   padding:16px;
   margin-bottom:12px;
-  box-shadow:var(--shadow);
+  box-shadow:0 10px 24px rgba(0,0,0,.06);
 }
-h2,h3{margin:0 0 10px}
-small{color:var(--muted)}
-.hidden{display:none}
-
-.row{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.h3{margin:0 0 10px 0}
+.small{font-size:13px;color:var(--muted)}
+.list-item{
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
 }
+.list-item:last-child{border-bottom:none}
 .badge{
-  display:inline-flex;
-  align-items:center;
-  padding:6px 10px;
+  display:inline-block;
+  padding:4px 10px;
   border-radius:999px;
-  font-weight:800;
   font-size:12px;
-  border:1px solid var(--border);
-  background:#fff;
+  font-weight:800;
 }
-.badge.low{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
-.badge.ok{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
-
-.list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.item{
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
-  background:#fff;
-}
-.item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.item-title{font-weight:900}
-.item-meta{margin-top:6px;color:var(--muted);font-size:13px;line-height:1.4}
-
-.btn{
+.badge.low{background:#fee2e2;color:#b91c1c}
+.badge.ok{background:#dcfce7;color:#15803d}
+.badge.info{background:#e0f2fe;color:#075985}
+button{
   width:100%;
-  padding:12px;
+  padding:12px 14px;
   border:none;
   border-radius:12px;
   font-weight:900;
   cursor:pointer;
   margin-top:10px;
 }
-.btn.primary{background:var(--primary);color:#fff}
-.btn.success{background:var(--success);color:#fff}
-.btn.warn{background:var(--warning);color:#111827}
-.btn.danger{background:var(--error);color:#fff}
-.btn.ghost{background:#fff;border:1px solid var(--border);color:#0f172a}
-.btn:disabled{opacity:.55;cursor:not-allowed}
-
-.msg{
-  text-align:center;
-  font-weight:900;
-  padding:12px;
-  border-radius:14px;
-  border:1px solid var(--border);
-}
-.msg.success{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
-.msg.error{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
-.msg.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
-
-.kpi{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:10px;
-}
-.kpi .box{
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
+.primary{background:var(--primary);color:#fff}
+.success{background:var(--success);color:#fff}
+.warning{background:var(--warning);color:#111827}
+.danger{background:var(--error);color:#fff}
+.ghost{
   background:#fff;
+  border:1px solid var(--border);
+  color:#0f172a;
+}
+.hidden{display:none}
+.center{text-align:center}
+.big{
+  font-size:22px;
+  font-weight:900;
+}
+.hr{height:1px;background:var(--border);margin:12px 0}
+.kpi{
+  display:flex;gap:10px;justify-content:space-between;margin-top:8px
+}
+.kpi > div{
+  flex:1;
+  background:#f8fafc;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
 }
 .kpi .label{font-size:12px;color:var(--muted);font-weight:800}
-.kpi .value{font-size:18px;font-weight:950;margin-top:4px}
-
-.progressWrap{
-  margin-top:10px;
-  border:1px solid var(--border);
-  border-radius:14px;
-  overflow:hidden;
-  background:#fff;
-}
-.progressBar{
-  height:12px;
-  width:0%;
-  background:var(--primary);
-}
-.progressText{
-  display:flex;
-  justify-content:space-between;
-  padding:10px 12px;
-  font-weight:900;
-}
-.camBox{
-  border:1px dashed var(--border);
-  border-radius:14px;
+.kpi .value{font-size:18px;font-weight:900;color:#0f172a}
+#qr-reader, #qr-reader-product{width:100%;min-height:260px}
+.note{
   padding:10px;
-  background:#fff;
+  border-radius:12px;
+  background:#f8fafc;
+  border:1px dashed var(--border);
+  color:#0f172a;
+  font-weight:700;
 }
 </style>
 </head>
@@ -145,144 +115,120 @@ small{color:var(--muted)}
 
   <div class="header">
     <div class="logo">SAMEMO</div>
+    <div class="subtitle">Préparation — Bacs Tampon</div>
   </div>
-  <div class="sub">Préparation — Bacs Tampon</div>
 
-  <div id="topMsg" class="card hidden"></div>
+  <!-- message toast -->
+  <div id="toast" class="card hidden center"></div>
 
-  <!-- SCREEN: LISTE BACS -->
-  <div id="screenList" class="card">
+  <!-- LISTE -->
+  <div id="screen-list" class="card">
     <div class="row">
-      <h3 style="margin:0">Bacs à compléter</h3>
-      <button class="btn ghost" style="width:auto;margin:0;padding:10px 12px" onclick="loadBacs()">↻</button>
+      <div>
+        <div class="h3 big">Bacs à compléter</div>
+        <div class="small">Clique un bac → valide en scannant → scan produits jusqu’au max.</div>
+      </div>
+      <button class="ghost" style="width:auto;margin:0;padding:10px 12px" onclick="loadBacs()">↻</button>
     </div>
-    <div id="bacs" class="list" style="margin-top:10px"></div>
-    <small>Astuce : tu vois uniquement les bacs où <b>QTY_ACTUEL &lt; QTY_MAX</b>.</small>
+    <div class="hr"></div>
+    <div id="bacs"></div>
   </div>
 
-  <!-- SCREEN: SCAN BAC -->
-  <div id="screenScanBac" class="card hidden">
-    <h3 style="text-align:center">1) Scanner le BAC</h3>
-    <div id="msgBac" class="msg warn">Clique “Démarrer scan” puis scanne le QR du bac.</div>
-
-    <div class="kpi">
-      <div class="box">
-        <div class="label">BAC attendu</div>
-        <div class="value" id="bacExpected">—</div>
-      </div>
-      <div class="box">
-        <div class="label">État caméra</div>
-        <div class="value" id="camState">Prêt</div>
-      </div>
+  <!-- SCAN BAC -->
+  <div id="screen-scan-bac" class="card hidden">
+    <div class="row">
+      <div class="big">Scanner le bac</div>
+      <button class="ghost" style="width:auto;margin:0;padding:10px 12px" id="btnBackFromBac">⬅</button>
     </div>
+    <div class="small" id="bacHint" style="margin-top:6px"></div>
+    <div class="hr"></div>
 
-    <div class="camBox" style="margin-top:12px">
-      <div id="qr-reader-bac" style="width:100%;min-height:260px"></div>
+    <button id="btnStartBacScan" class="primary" type="button">📷 Démarrer caméra</button>
+    <div id="qr-reader" class="hidden" style="margin-top:10px"></div>
+    <div id="bacScanResult" class="center" style="margin-top:10px;font-weight:900"></div>
+
+    <div class="hr"></div>
+    <div class="note small">
+      Si la caméra est refusée, tu reviens à la liste automatiquement.
     </div>
-
-    <button id="btnStartBac" class="btn primary">📷 Démarrer scan BAC</button>
-    <button id="btnBackFromBac" class="btn ghost">⬅ Retour</button>
   </div>
 
-  <!-- SCREEN: SCAN PRODUITS -->
-  <div id="screenScanProd" class="card hidden">
-    <h3 style="text-align:center">2) Scanner les PRODUITS</h3>
-
-    <div id="msgProd" class="msg warn">
-      Scanne le produit attendu jusqu’à remplir le bac.
+  <!-- SCAN PRODUITS -->
+  <div id="screen-scan-product" class="card hidden">
+    <div class="row">
+      <div class="big">Remplir le bac</div>
+      <button class="ghost" style="width:auto;margin:0;padding:10px 12px" id="btnBackFromProduct">⬅</button>
     </div>
+
+    <div class="hr"></div>
+
+    <div class="note" id="productInfo"></div>
 
     <div class="kpi">
-      <div class="box">
-        <div class="label">Bac</div>
-        <div class="value" id="kpiBac">—</div>
+      <div>
+        <div class="label">Actuel</div>
+        <div class="value" id="kpiHaving">0</div>
       </div>
-      <div class="box">
-        <div class="label">Produit attendu</div>
-        <div class="value" id="kpiProd">—</div>
+      <div>
+        <div class="label">Cible</div>
+        <div class="value" id="kpiTarget">0</div>
       </div>
-      <div class="box">
-        <div class="label">Actuel → Cible</div>
-        <div class="value" id="kpiQty">—</div>
-      </div>
-      <div class="box">
-        <div class="label">Scanné (session)</div>
-        <div class="value" id="kpiSession">0</div>
+      <div>
+        <div class="label">À ajouter</div>
+        <div class="value" id="kpiNeed">0</div>
       </div>
     </div>
 
-    <div class="progressWrap">
-      <div class="progressBar" id="bar"></div>
-      <div class="progressText">
-        <span id="progressLeft">0 / 0</span>
-        <span id="progressRight">0%</span>
-      </div>
-    </div>
+    <button id="btnStartProductScan" class="primary" type="button" style="margin-top:12px">📷 Scanner produits</button>
+    <div id="qr-reader-product" class="hidden" style="margin-top:10px"></div>
 
-    <div class="camBox" style="margin-top:12px">
-      <div id="qr-reader-prod" style="width:100%;min-height:260px"></div>
-    </div>
+    <div id="productScanMsg" class="center" style="margin-top:10px;font-weight:900"></div>
 
-    <button id="btnStartProd" class="btn primary">📷 Démarrer scan PRODUITS</button>
-    <button id="btnFinish" class="btn success" disabled>✅ Bac rempli (valider)</button>
-    <button id="btnBackFromProd" class="btn ghost">⬅ Retour</button>
+    <button id="btnFinish" class="success hidden" type="button">✅ Valider bac rempli</button>
   </div>
 
 </div>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
-
 <script>
 /* ================= CONFIG ================= */
 const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
 
 /* ================= STATE ================= */
 let bacsData = [];
-let selectedBac = null; // objet bac normalisé
-let scannerBac = null;
-let scannerProd = null;
-let scannerBacRunning = false;
-let scannerProdRunning = false;
-let sessionScanned = 0;
+let currentBacObj = null;
 
-/* ================= HELPERS ================= */
-function showTop(text, type="warn"){
-  const el = document.getElementById("topMsg");
-  el.className = "card";
-  el.innerHTML = `<div class="msg ${type}">${text}</div>`;
-  el.classList.remove("hidden");
-  setTimeout(()=>el.classList.add("hidden"), 2600);
+let bacScanner = null;
+let bacScannerRunning = false;
+
+let productScanner = null;
+let productScannerRunning = false;
+
+let needToAdd = 0;     // quantité à ajouter (pour arriver à qtyMax)
+let addedCount = 0;    // nombre de scans validés
+let lastScan = {code:null, time:0};
+const COOLDOWN_MS = 900;
+
+/* ================= UI HELPERS ================= */
+const $ = (id) => document.getElementById(id);
+
+function toast(msg, type="success"){
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "card center";
+  t.style.border = "1px solid var(--border)";
+  if(type==="success") t.style.background = "#ecfdf5";
+  if(type==="error")   t.style.background = "#fee2e2";
+  if(type==="info")    t.style.background = "#e0f2fe";
+  t.classList.remove("hidden");
+  setTimeout(()=>t.classList.add("hidden"), 2200);
 }
 
-function isObj(x){ return x && typeof x === "object"; }
-
-function normalizeBac(raw){
-  // Ton header "gros" (BAC_ID, QR_CODE, PRODUIT_NOM, QTY_MAX, QTY_ACTUEL, etc.)
-  const bacId = raw.BAC_ID ?? raw.Bac_Code ?? raw.Bac_Code ?? raw.bac ?? raw.id;
-  const qr    = raw.QR_CODE ?? raw.qr ?? bacId;
-  const prodCode = raw.PRODUIT_CODE ?? raw.Product_Code ?? raw.code;
-  const prodName = raw.PRODUIT_NOM ?? raw.Produit_Label ?? raw.Produit_Nom ?? raw.name;
-  const qtyMax   = Number(raw.QTY_MAX ?? raw.Qty_Target ?? raw.qtyMax ?? 0);
-  const qtyAct   = Number(raw.QTY_ACTUEL ?? raw.Qty_Having ?? raw.qtyHaving ?? 0);
-
-  return {
-    bacId: String(bacId || ""),
-    qr: String(qr || ""),
-    prodCode: String(prodCode || ""),
-    prodName: String(prodName || "Produit"),
-    qtyMax,
-    qtyAct
-  };
-}
-
-function needFill(b){
-  return Number(b.qtyAct) < Number(b.qtyMax);
-}
-
-function setScreen(which){
-  const ids = ["screenList","screenScanBac","screenScanProd"];
-  ids.forEach(id => document.getElementById(id).classList.add("hidden"));
-  document.getElementById(which).classList.remove("hidden");
+function showScreen(which){
+  $("screen-list").classList.add("hidden");
+  $("screen-scan-bac").classList.add("hidden");
+  $("screen-scan-product").classList.add("hidden");
+  $(which).classList.remove("hidden");
 }
 
 /* ================= LOAD BACS ================= */
@@ -291,311 +237,303 @@ async function loadBacs(){
     const res = await fetch(API_URL + "?action=bacsTampon", { cache:"no-store" });
     const json = await res.json();
 
-    // Réponse possible: [ ... ] OU {data:[...]} OU {success:true,data:[...]}
-    let arr = [];
-    if(Array.isArray(json)) arr = json;
-    else if(isObj(json) && Array.isArray(json.data)) arr = json.data;
-    else if(isObj(json) && Array.isArray(json.rows)) arr = json.rows;
-    else arr = [];
-
-    bacsData = arr
-      .map(normalizeBac)
-      .filter(b => b.bacId); // garder ceux qui ont un id
+    // accepte: [ ... ] ou { data:[ ... ] }
+    if(Array.isArray(json)) bacsData = json;
+    else if(json && Array.isArray(json.data)) bacsData = json.data;
+    else {
+      console.warn("Réponse API invalide:", json);
+      bacsData = [];
+      toast("API invalide", "error");
+    }
 
     renderBacs();
 
-  }catch(e){
-    console.error(e);
+  }catch(err){
+    console.error(err);
     bacsData = [];
     renderBacs();
-    showTop("Erreur API (fetch). Vérifie l’URL Apps Script.", "error");
+    toast("Erreur API", "error");
   }
 }
 
 function renderBacs(){
-  const div = document.getElementById("bacs");
+  const div = $("bacs");
   div.innerHTML = "";
 
-  // IMPORTANT: on montre UNIQUEMENT ceux à remplir
-  const todo = bacsData.filter(needFill);
-
-  if(todo.length === 0){
-    div.innerHTML = `<div class="item"><div class="item-title">Aucun bac à compléter 👍</div><div class="item-meta">Si tu es sûr qu’un bac doit sortir ici, vérifie : QTY_ACTUEL &lt; QTY_MAX.</div></div>`;
+  if(!Array.isArray(bacsData) || bacsData.length === 0){
+    div.innerHTML = "<em>Aucun bac à compléter 👍</em>";
     return;
   }
 
-  todo.forEach(b=>{
-    const badge = needFill(b) ? `<span class="badge low">À remplir</span>` : `<span class="badge ok">OK</span>`;
+  bacsData.forEach(b=>{
+    // compat champs
+    const bacId     = b.BAC_ID ?? b.Bac_Code ?? b.Bac_Code ?? "BAC-?";
+    const qrCode    = b.QR_CODE ?? bacId; // IMPORTANT
+    const prodCode  = b.PRODUIT_CODE ?? b.Product_Code ?? "";
+    const prodName  = b.PRODUIT_NOM ?? b.Produit_Label ?? "Produit";
+    const qtyHaving = Number(b.QTY_ACTUEL ?? b.Qty_Having ?? 0);
+    const qtyMax    = Number(b.QTY_MAX ?? b.Qty_Target ?? 0);
+
+    const needFill  = qtyHaving < qtyMax;
+
     const item = document.createElement("div");
-    item.className = "item";
+    item.className = "list-item";
     item.innerHTML = `
-      <div class="item-top">
+      <div class="row">
         <div>
-          <div class="item-title">${b.bacId}</div>
-          <div class="item-meta">${b.prodName} <small>${b.prodCode ? "• " + b.prodCode : ""}</small></div>
-          <div class="item-meta"><b>${b.qtyAct}</b> / <b>${b.qtyMax}</b> ${badge}</div>
-        </div>
-        <div style="min-width:110px">
-          <button class="btn primary" style="margin:0" onclick="openScanBac('${escapeQuotes(b.bacId)}')">Scanner</button>
+          <div style="font-weight:900">${bacId} <span class="badge ${needFill?'low':'ok'}">${needFill?'À remplir':'OK'}</span></div>
+          <div class="small">${prodName} <span class="badge info">${prodCode || "CODE?"}</span></div>
+          <div class="small" style="margin-top:4px">${qtyHaving} / ${qtyMax}</div>
         </div>
       </div>
+      <button class="primary" type="button">📷 Scanner ce bac</button>
     `;
+
+    item.querySelector("button").onclick = () => {
+      currentBacObj = { bacId, qrCode, prodCode, prodName, qtyHaving, qtyMax };
+      openBacScan();
+    };
+
     div.appendChild(item);
   });
 }
 
-function escapeQuotes(s){
-  return String(s).replace(/'/g,"\\'");
+/* ================= SCAN BAC ================= */
+function openBacScan(){
+  stopProductScannerSafe();
+  stopBacScannerSafe();
+
+  $("bacScanResult").textContent = "";
+  $("qr-reader").classList.add("hidden");
+  $("btnStartBacScan").classList.remove("hidden");
+
+  $("bacHint").textContent =
+    `Bac attendu : ${currentBacObj.bacId} (QR : ${currentBacObj.qrCode})`;
+
+  showScreen("screen-scan-bac");
 }
 
-/* ================= SCAN BAC ================= */
-function openScanBac(bacId){
-  // retrouver le bac dans la liste
-  const found = bacsData.map(normalizeBac).find(x => x.bacId === bacId);
-  if(!found){
-    showTop("Bac introuvable côté UI. Recharge la liste.", "error");
+$("btnStartBacScan").onclick = async () => {
+  // demande permission AVANT html5-qrcode (sinon erreurs en chaîne)
+  try{
+    await navigator.mediaDevices.getUserMedia({ video:true });
+  }catch(err){
+    toast("📷 Caméra refusée — retour liste", "error");
+    showScreen("screen-list");
     return;
   }
-  selectedBac = found;
-  sessionScanned = 0;
 
-  document.getElementById("bacExpected").textContent = selectedBac.bacId;
-  document.getElementById("camState").textContent = "Prêt";
-  document.getElementById("msgBac").className = "msg warn";
-  document.getElementById("msgBac").textContent = "Clique “Démarrer scan” puis scanne le QR du bac.";
+  $("btnStartBacScan").classList.add("hidden");
+  $("qr-reader").classList.remove("hidden");
 
-  setScreen("screenScanBac");
-}
+  bacScanner = new Html5Qrcode("qr-reader");
+  bacScannerRunning = false;
 
-async function startScanBac(){
-  if(scannerBacRunning) return;
+  bacScanner.start(
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
+    (codeText) => onBacScanned(codeText),
+    () => {}
+  ).then(()=> {
+    bacScannerRunning = true;
+  }).catch((err)=> {
+    console.warn("Start bac scan failed:", err);
+    bacScannerRunning = false;
+    toast("📷 Caméra indisponible", "error");
+    showScreen("screen-list");
+  });
+};
 
-  document.getElementById("camState").textContent = "Ouverture…";
+function onBacScanned(codeText){
+  const now = Date.now();
+  if(codeText === lastScan.code && (now-lastScan.time) < COOLDOWN_MS) return;
+  lastScan = {code:codeText, time:now};
 
-  // IMPORTANT: caméra nécessite HTTPS + permission
-  try{
-    // init scanner
-    scannerBac = new Html5Qrcode("qr-reader-bac");
-    scannerBacRunning = false;
+  const expectedId = String(currentBacObj.bacId);
+  const expectedQr = String(currentBacObj.qrCode);
 
-    await scannerBac.start(
-      { facingMode:"environment" },
-      { fps:10, qrbox:250 },
-      code => onScannedBac(code),
-      () => {}
-    );
-
-    scannerBacRunning = true;
-    document.getElementById("camState").textContent = "Active";
-
-  }catch(err){
-    console.warn("Caméra refusée / indispo", err);
-    scannerBacRunning = false;
-    document.getElementById("camState").textContent = "Refusée";
-
-    // retour direct sans stop() (sinon erreur “not running”)
-    showTop("Caméra refusée — retour à la liste", "error");
-    setTimeout(()=>{
-      closeScanBacToList();
-    }, 900);
+  // accepte scan == BAC_ID ou QR_CODE
+  if(codeText !== expectedId && codeText !== expectedQr){
+    $("bacScanResult").textContent = "❌ Mauvais bac : " + codeText;
+    $("bacScanResult").style.color = "#dc2626";
+    return;
   }
+
+  $("bacScanResult").textContent = "✅ Bac validé : " + expectedId;
+  $("bacScanResult").style.color = "#16a34a";
+
+  stopBacScannerSafe();
+  openProductScan();
 }
 
-async function stopScanBacSafe(){
-  if(scannerBac && scannerBacRunning){
-    try{ await scannerBac.stop(); }catch{}
+function stopBacScannerSafe(){
+  if(bacScanner && bacScannerRunning){
+    bacScanner.stop().catch(()=>{}).finally(()=>{ bacScannerRunning = false; });
+  }else{
+    bacScannerRunning = false;
   }
-  scannerBacRunning = false;
-  scannerBac = null;
-}
-
-async function onScannedBac(code){
-  // match: QR_CODE OU bacId (selon ce que tu colles sur le bac)
-  const ok = (code === selectedBac.qr) || (code === selectedBac.bacId);
-  if(!ok) return;
-
-  await stopScanBacSafe();
-
-  document.getElementById("msgBac").className = "msg success";
-  document.getElementById("msgBac").textContent = "✅ Bac reconnu : " + code;
-
-  // passer à scan produits
-  setTimeout(()=>{
-    openScanProducts();
-  }, 450);
-}
-
-function closeScanBacToList(){
-  stopScanBacSafe();
-  selectedBac = null;
-  setScreen("screenList");
+  // on ne clear pas le div, sinon html5-qrcode peut replanter sur iOS
 }
 
 /* ================= SCAN PRODUITS ================= */
-function openScanProducts(){
-  if(!selectedBac) return;
+function openProductScan(){
+  stopProductScannerSafe();
 
-  // KPI
-  document.getElementById("kpiBac").textContent = selectedBac.bacId;
-  document.getElementById("kpiProd").textContent = selectedBac.prodName || "Produit";
-  document.getElementById("kpiQty").textContent = `${selectedBac.qtyAct} → ${selectedBac.qtyMax}`;
-  document.getElementById("kpiSession").textContent = "0";
-  document.getElementById("msgProd").className = "msg warn";
-  document.getElementById("msgProd").textContent = "Scanne le produit attendu jusqu’à remplir le bac.";
+  const { bacId, prodCode, prodName, qtyHaving, qtyMax } = currentBacObj;
 
-  document.getElementById("btnFinish").disabled = true;
+  needToAdd = Math.max(0, qtyMax - qtyHaving);
+  addedCount = 0;
 
-  updateProgressUI();
+  $("productInfo").innerHTML = `
+    <div style="font-weight:900">Bac : ${bacId}</div>
+    <div class="small">Produit attendu : <b>${prodName}</b> (<b>${prodCode || "CODE?"}</b>)</div>
+    <div class="small">Scanne le produit jusqu’à atteindre la cible.</div>
+  `;
 
-  setScreen("screenScanProd");
+  $("kpiHaving").textContent = qtyHaving;
+  $("kpiTarget").textContent = qtyMax;
+  $("kpiNeed").textContent = needToAdd;
+
+  $("productScanMsg").textContent = "";
+  $("productScanMsg").style.color = "#0f172a";
+
+  $("btnFinish").classList.add("hidden");
+  $("qr-reader-product").classList.add("hidden");
+  $("btnStartProductScan").classList.remove("hidden");
+
+  showScreen("screen-scan-product");
 }
 
-function updateProgressUI(){
-  if(!selectedBac) return;
-
-  const current = Math.min(selectedBac.qtyAct + sessionScanned, selectedBac.qtyMax);
-  const target = selectedBac.qtyMax;
-  const pct = target > 0 ? Math.round((current/target)*100) : 0;
-
-  document.getElementById("progressLeft").textContent = `${current} / ${target}`;
-  document.getElementById("progressRight").textContent = `${pct}%`;
-  document.getElementById("bar").style.width = `${Math.min(100,pct)}%`;
-  document.getElementById("kpiSession").textContent = String(sessionScanned);
-
-  const done = (selectedBac.qtyAct + sessionScanned) >= selectedBac.qtyMax;
-  document.getElementById("btnFinish").disabled = !done;
-
-  if(done){
-    document.getElementById("msgProd").className = "msg success";
-    document.getElementById("msgProd").textContent = "✅ Quantité atteinte. Tu peux valider le bac.";
-  }
-}
-
-async function startScanProd(){
-  if(scannerProdRunning) return;
-
-  try{
-    scannerProd = new Html5Qrcode("qr-reader-prod");
-    scannerProdRunning = false;
-
-    // NOTE: html5-qrcode lit QR; selon navigateur/appareil il peut aussi lire des codes-barres.
-    // Si tu veux 100% code-barres plus tard, on met BarcodeDetector/ZXing.
-    await scannerProd.start(
-      { facingMode:"environment" },
-      { fps:12, qrbox:250 },
-      code => onScannedProduct(code),
-      () => {}
-    );
-
-    scannerProdRunning = true;
-
-  }catch(err){
-    console.warn("Caméra refusée / indispo (prod)", err);
-    scannerProdRunning = false;
-    showTop("Caméra refusée — retour liste", "error");
-    setTimeout(()=>closeProductsToList(), 900);
-  }
-}
-
-async function stopScanProdSafe(){
-  if(scannerProd && scannerProdRunning){
-    try{ await scannerProd.stop(); }catch{}
-  }
-  scannerProdRunning = false;
-  scannerProd = null;
-}
-
-let lastProd = null;
-let lastProdTs = 0;
-const COOLDOWN = 800;
-
-async function onScannedProduct(code){
-  if(!selectedBac) return;
-
-  const now = Date.now();
-  if(code === lastProd && (now - lastProdTs) < COOLDOWN) return;
-  lastProd = code;
-  lastProdTs = now;
-
-  // On accepte scan si le code match le PRODUIT_CODE attendu
-  // (si tes produits ont un QR différent, adapte ici)
-  const ok = (code === selectedBac.prodCode);
-  if(!ok){
-    document.getElementById("msgProd").className = "msg error";
-    document.getElementById("msgProd").textContent = `❌ Mauvais produit. Attendu: ${selectedBac.prodCode || "code produit"}`;
-    setTimeout(()=>{
-      // repasser en message normal si pas fini
-      const done = (selectedBac.qtyAct + sessionScanned) >= selectedBac.qtyMax;
-      if(!done){
-        document.getElementById("msgProd").className = "msg warn";
-        document.getElementById("msgProd").textContent = "Scanne le produit attendu jusqu’à remplir le bac.";
-      }
-    }, 900);
+$("btnStartProductScan").onclick = async () => {
+  if(needToAdd <= 0){
+    $("productScanMsg").textContent = "✅ Déjà au max, rien à ajouter.";
+    $("productScanMsg").style.color = "#16a34a";
+    $("btnFinish").classList.remove("hidden");
     return;
   }
 
-  // increment session
-  if((selectedBac.qtyAct + sessionScanned) < selectedBac.qtyMax){
-    sessionScanned++;
-    updateProgressUI();
+  try{
+    await navigator.mediaDevices.getUserMedia({ video:true });
+  }catch(err){
+    toast("📷 Caméra refusée — retour liste", "error");
+    showScreen("screen-list");
+    return;
+  }
+
+  $("btnStartProductScan").classList.add("hidden");
+  $("qr-reader-product").classList.remove("hidden");
+
+  productScanner = new Html5Qrcode("qr-reader-product");
+  productScannerRunning = false;
+
+  productScanner.start(
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
+    (codeText) => onProductScanned(codeText),
+    () => {}
+  ).then(()=>{
+    productScannerRunning = true;
+  }).catch((err)=>{
+    console.warn("Start product scan failed:", err);
+    productScannerRunning = false;
+    toast("📷 Caméra indisponible", "error");
+    showScreen("screen-list");
+  });
+};
+
+function onProductScanned(codeText){
+  const now = Date.now();
+  if(codeText === lastScan.code && (now-lastScan.time) < COOLDOWN_MS) return;
+  lastScan = {code:codeText, time:now};
+
+  // Ici: on accepte QR ou code-barres -> c’est juste un texte.
+  // On valide si == PRODUIT_CODE attendu
+  const expectedProd = String(currentBacObj.prodCode || "");
+  if(!expectedProd){
+    $("productScanMsg").textContent = "⚠️ Bac sans PRODUIT_CODE (sheet incomplet).";
+    $("productScanMsg").style.color = "#f59e0b";
+    return;
+  }
+
+  if(codeText !== expectedProd){
+    $("productScanMsg").textContent = "❌ Mauvais produit : " + codeText;
+    $("productScanMsg").style.color = "#dc2626";
+    return;
+  }
+
+  if(addedCount >= needToAdd){
+    $("productScanMsg").textContent = "✅ Déjà complet.";
+    $("productScanMsg").style.color = "#16a34a";
+    return;
+  }
+
+  addedCount++;
+  const newHaving = currentBacObj.qtyHaving + addedCount;
+  const remaining = Math.max(0, currentBacObj.qtyMax - newHaving);
+
+  $("kpiHaving").textContent = newHaving;
+  $("kpiNeed").textContent = remaining;
+
+  $("productScanMsg").textContent = `✅ OK (${addedCount}/${needToAdd})`;
+  $("productScanMsg").style.color = "#16a34a";
+
+  if(remaining === 0){
+    stopProductScannerSafe();
+    $("btnFinish").classList.remove("hidden");
+    $("productScanMsg").textContent = "✅ Bac rempli — valide pour enregistrer.";
   }
 }
 
-async function validateFilledBac(){
-  if(!selectedBac) return;
+function stopProductScannerSafe(){
+  if(productScanner && productScannerRunning){
+    productScanner.stop().catch(()=>{}).finally(()=>{ productScannerRunning = false; });
+  }else{
+    productScannerRunning = false;
+  }
+}
 
-  // Stop caméra
-  await stopScanProdSafe();
-
-  // Mise à jour backend: ici on appelle updateBac (qui met qty_actuel = qty_max)
+/* ================= FINISH (POST updateBac) ================= */
+$("btnFinish").onclick = async () => {
   try{
+    const payload = {
+      action:"updateBac",
+      bac: currentBacObj.bacId,
+      qtyAdded: addedCount
+    };
+
     const res = await fetch(API_URL, {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        action:"updateBac",
-        bac: selectedBac.bacId
-      })
+      body: JSON.stringify(payload)
     });
 
-    const json = await res.json().catch(()=>null);
-
-    if(json && json.success === false){
-      showTop("Backend: " + (json.error || "Erreur"), "error");
+    const r = await res.json().catch(()=> ({}));
+    if(r && r.success === false){
+      toast("❌ " + (r.error || "Erreur serveur"), "error");
       return;
     }
 
-    showTop("Bac validé ✅", "success");
+    toast("✅ Bac mis à jour", "success");
+    currentBacObj = null;
+    showScreen("screen-list");
+    loadBacs();
 
-    // retour liste + refresh
-    selectedBac = null;
-    sessionScanned = 0;
-
-    setTimeout(()=>{
-      setScreen("screenList");
-      loadBacs();
-    }, 800);
-
-  }catch(e){
-    console.error(e);
-    showTop("Erreur réseau updateBac", "error");
+  }catch(err){
+    console.error(err);
+    toast("Erreur mise à jour", "error");
   }
-}
+};
 
-function closeProductsToList(){
-  stopScanProdSafe();
-  selectedBac = null;
-  sessionScanned = 0;
-  setScreen("screenList");
-}
+/* ================= BACK BUTTONS ================= */
+$("btnBackFromBac").onclick = () => {
+  stopBacScannerSafe();
+  showScreen("screen-list");
+};
 
-/* ================= BUTTONS ================= */
-document.getElementById("btnStartBac").onclick = startScanBac;
-document.getElementById("btnBackFromBac").onclick = closeScanBacToList;
-
-document.getElementById("btnStartProd").onclick = startScanProd;
-document.getElementById("btnFinish").onclick = validateFilledBac;
-document.getElementById("btnBackFromProd").onclick = closeProductsToList;
+$("btnBackFromProduct").onclick = () => {
+  stopProductScannerSafe();
+  showScreen("screen-list");
+};
 
 /* ================= INIT ================= */
 loadBacs();
