@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Samemo — Prépa Bac Tampon</title>
+<title>SAMEMO — Prépa Bac Tampon</title>
 
 <style>
 :root{
@@ -22,28 +22,11 @@ body{
   font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
   background:var(--bg);
 }
-.app{
-  max-width:480px;
-  margin:auto;
-  padding:16px;
-}
-.header{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-  margin-bottom:16px;
-}
-.logo{
-  font-size:28px;
-  font-weight:900;
-  color:var(--primary);
-}
-.subtitle{
-  font-size:14px;
-  color:#475569;
-  text-align:center;
-}
+.app{max-width:480px;margin:auto;padding:16px}
+.header{text-align:center;margin-bottom:12px}
+.logo{font-size:28px;font-weight:900;color:var(--primary)}
+.subtitle{font-size:14px;color:#475569}
+
 .card{
   background:var(--card);
   border-radius:14px;
@@ -51,29 +34,23 @@ body{
   margin-bottom:12px;
   box-shadow:0 8px 20px rgba(0,0,0,.06);
 }
+
 .list-item{
   padding:12px 0;
   border-bottom:1px solid var(--border);
 }
-.list-item:last-child{
-  border-bottom:none;
-}
+.list-item:last-child{border-bottom:none}
+
 .badge{
   display:inline-block;
   padding:4px 8px;
   border-radius:8px;
   font-size:12px;
   font-weight:700;
-  margin-left:6px;
 }
-.badge.low{
-  background:#fee2e2;
-  color:#b91c1c;
-}
-.badge.ok{
-  background:#dcfce7;
-  color:#15803d;
-}
+.badge.low{background:#fee2e2;color:#b91c1c}
+.badge.ok{background:#dcfce7;color:#15803d}
+
 button{
   width:100%;
   padding:12px;
@@ -97,12 +74,12 @@ button{
 
   <div class="header">
     <div class="logo">SAMEMO</div>
+    <div class="subtitle">Préparation — Bacs Tampon</div>
   </div>
-  <div class="subtitle">Préparation — Bacs Tampon</div>
 
   <div id="message" class="card hidden center"></div>
 
-  <!-- LISTE BACS -->
+  <!-- LISTE DES BACS -->
   <div id="bacsList" class="card">
     <h3>Bacs à compléter</h3>
     <div id="bacs"></div>
@@ -121,27 +98,27 @@ button{
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <script>
-/* 🔧 CONFIG */
+/* ================= CONFIG ================= */
 const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
 
 let bacsData = [];
 let scanner = null;
 let currentBac = null;
 
-/* 🔄 LOAD */
+/* ================= LOAD ================= */
 async function loadBacs(){
   try{
     const res = await fetch(API_URL + "?action=bacsTampon");
     const json = await res.json();
 
-    // ✅ sécurité absolue
+    // 🔐 blindage total
     if(Array.isArray(json)){
       bacsData = json;
     }else if(json && Array.isArray(json.data)){
       bacsData = json.data;
     }else{
       bacsData = [];
-      console.warn("Réponse API inattendue :", json);
+      console.warn("API inattendue :", json);
     }
 
     renderBacs();
@@ -154,7 +131,7 @@ async function loadBacs(){
   }
 }
 
-/* 🎨 RENDER */
+/* ================= RENDER ================= */
 function renderBacs(){
   const div = document.getElementById("bacs");
   div.innerHTML = "";
@@ -165,25 +142,40 @@ function renderBacs(){
   }
 
   bacsData.forEach(b=>{
+    const bacCode =
+      b.Bac_Code || b.BAC_ID || "BAC-?";
+
+    const produit =
+      b.Produit_Label || b.PRODUIT_NOM || "Produit";
+
+    const qtyHaving =
+      Number(b.Qty_Having ?? b.QTY_ACTUEL ?? 0);
+
+    const qtyTarget =
+      Number(b.Qty_Target ?? b.QTY_MAX ?? 0);
+
+    const needFill = qtyHaving < qtyTarget;
+
     const item = document.createElement("div");
     item.className = "list-item";
 
     item.innerHTML = `
-      <strong>${b.Bac_Code}</strong><br>
-      ${b.Produit_Label || b.Produit_Nom || "Produit"}<br>
-      ${b.Qty_Having} / ${b.Qty_Target}
-      <span class="badge ${b.Qty_Having < b.Qty_Target ? 'low' : 'ok'}">
-        ${b.Qty_Having < b.Qty_Target ? 'À remplir' : 'OK'}
+      <strong>${bacCode}</strong><br>
+      ${produit}<br>
+      ${qtyHaving} / ${qtyTarget}
+      <span class="badge ${needFill ? 'low' : 'ok'}">
+        ${needFill ? 'À remplir' : 'OK'}
       </span>
-      <button class="primary" onclick="startScan('${b.Bac_Code}')">
+      <button class="primary" onclick="startScan('${bacCode}')">
         📷 Scanner ce bac
       </button>
     `;
+
     div.appendChild(item);
   });
 }
 
-/* 📷 SCAN */
+/* ================= SCAN ================= */
 function startScan(bac){
   currentBac = bac;
 
@@ -203,24 +195,25 @@ function startScan(bac){
 function onScanned(code){
   if(code === currentBac){
     scanner.stop();
-    document.getElementById("scanResult").textContent = "✅ Bac reconnu : " + code;
+    document.getElementById("scanResult").textContent =
+      "✅ Bac reconnu : " + code;
     updateBac(code);
   }
 }
 
-/* 🔁 UPDATE */
+/* ================= UPDATE ================= */
 async function updateBac(code){
   try{
     await fetch(API_URL,{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{ "Content-Type":"application/json" },
       body:JSON.stringify({
         action:"updateBac",
         bac:code
       })
     });
 
-    showMessage("Bac mis à jour ✅", "success");
+    showMessage("Bac mis à jour ✅","success");
 
     setTimeout(()=>{
       document.getElementById("scanScreen").classList.add("hidden");
@@ -230,18 +223,18 @@ async function updateBac(code){
 
   }catch(err){
     console.error(err);
-    showMessage("Erreur mise à jour", "error");
+    showMessage("Erreur mise à jour","error");
   }
 }
 
-/* 🔙 BACK */
+/* ================= BACK ================= */
 document.getElementById("backBtn").onclick = ()=>{
   if(scanner) scanner.stop();
   document.getElementById("scanScreen").classList.add("hidden");
   document.getElementById("bacsList").classList.remove("hidden");
 };
 
-/* 💬 MSG */
+/* ================= MESSAGE ================= */
 function showMessage(txt,type){
   const m = document.getElementById("message");
   m.textContent = txt;
@@ -250,7 +243,7 @@ function showMessage(txt,type){
   setTimeout(()=>m.classList.add("hidden"),2500);
 }
 
-/* 🚀 INIT */
+/* ================= INIT ================= */
 loadBacs();
 </script>
 
