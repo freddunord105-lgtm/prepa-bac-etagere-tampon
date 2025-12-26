@@ -184,13 +184,27 @@ function startScan(bac){
   document.getElementById("scanResult").textContent = "";
 
   scanner = new Html5Qrcode("qr-reader");
+
   scanner.start(
-    { facingMode:"environment" },
-    { fps:10, qrbox:250 },
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
     code => onScanned(code),
     () => {}
-  );
+  ).then(() => {
+    scannerRunning = true;
+  }).catch(err => {
+    console.warn("Caméra refusée", err);
+    scannerRunning = false;
+
+    showMessage("📷 Caméra refusée — retour à la liste", "error");
+
+    setTimeout(()=>{
+      document.getElementById("scanScreen").classList.add("hidden");
+      document.getElementById("bacsList").classList.remove("hidden");
+    }, 1200);
+  });
 }
+
 
 function onScanned(code){
   if(code === currentBac){
