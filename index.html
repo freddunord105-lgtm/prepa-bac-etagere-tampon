@@ -192,7 +192,7 @@ button{
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 /* ================= CONFIG ================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbwgXaYveIQYXvQPpvmrzmOn_F-GY1CBX46ZH4d25x8PZnmpPd5jyVm7qmRAHqmkjDWr/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
 
 /* ================= STATE ================= */
 let bacsData = [];
@@ -267,7 +267,7 @@ function renderBacs(){
 
   bacsData.forEach(b=>{
     // compat champs
-    const bacId     = b.BAC_ID ?? b.Bac_Code ?? b.Bac_Code ?? "BAC-?";
+    const bacId     = b.BAC_ID ?? b.Bac_Code ?? "BAC-?";
     const qrCode    = b.QR_CODE ?? bacId; // IMPORTANT
     const prodCode  = b.PRODUIT_CODE ?? b.Product_Code ?? "";
     const prodName  = b.PRODUIT_NOM ?? b.Produit_Label ?? "Produit";
@@ -446,8 +446,6 @@ function onProductScanned(codeText){
   if(codeText === lastScan.code && (now-lastScan.time) < COOLDOWN_MS) return;
   lastScan = {code:codeText, time:now};
 
-  // Ici: on accepte QR ou code-barres -> c’est juste un texte.
-  // On valide si == PRODUIT_CODE attendu
   const expectedProd = String(currentBacObj.prodCode || "");
   if(!expectedProd){
     $("productScanMsg").textContent = "⚠️ Bac sans PRODUIT_CODE (sheet incomplet).";
@@ -493,21 +491,24 @@ function stopProductScannerSafe(){
 }
 
 /* ================= FINISH (POST updateBac) ================= */
+/* ✅ CORRIGÉ CORS : POST "simple" form-urlencoded (pas JSON, pas headers) */
 $("btnFinish").onclick = async () => {
   try{
-    const payload = {
-      action:"updateBac",
-      bac: currentBacObj.bacId,
-      qtyAdded: addedCount
-    };
+    const body = new URLSearchParams();
+    body.set("action", "updateBac");
+    body.set("bac", currentBacObj.bacId);
+    body.set("qtyAdded", String(addedCount));
 
     const res = await fetch(API_URL, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(payload)
+      method: "POST",
+      body: body
     });
 
-    const r = await res.json().catch(()=> ({}));
+    const txt = await res.text();
+    let r = {};
+    try { r = JSON.parse(txt); }
+    catch(e){ r = { success:false, error:"Réponse non JSON", raw: txt }; }
+
     if(r && r.success === false){
       toast("❌ " + (r.error || "Erreur serveur"), "error");
       return;
