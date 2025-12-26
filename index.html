@@ -3,54 +3,158 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Samemo — Prépa Bac Tampon</title>
+<title>SAMEMO — Prépa Bac Tampon</title>
 
 <style>
 :root{
   --primary:#0f766e;
   --success:#16a34a;
+  --warning:#f59e0b;
   --error:#dc2626;
-  --bg:#f8fafc;
+  --bg:#f1f5f9;
   --card:#ffffff;
   --border:#e5e7eb;
+  --text:#0f172a;
 }
+
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:var(--bg)}
-.app{max-width:480px;margin:auto;padding:16px}
-.header{text-align:center;margin-bottom:16px}
-.logo{font-size:28px;font-weight:900;color:var(--primary)}
-.subtitle{font-size:14px;color:#475569}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.app{
+  max-width:480px;
+  margin:auto;
+  padding:16px;
+}
+
+.header{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.logo{
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:.5px;
+  color:var(--primary);
+}
+
+.subtitle{
+  font-size:14px;
+  color:#475569;
+}
+
 .card{
   background:var(--card);
-  border-radius:12px;
+  border-radius:16px;
   padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.06);
+}
+
+.bac-card{
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px;
   margin-bottom:12px;
-  box-shadow:0 8px 20px rgba(0,0,0,.05)
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  animation:fadeIn .25s ease;
 }
-.list-item{
-  padding:10px;
-  border-bottom:1px solid var(--border)
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
 }
-button{
-  width:100%;
-  padding:12px;
-  border:none;
-  border-radius:10px;
-  font-weight:700;
-  margin-top:8px;
-  cursor:pointer
+
+.bac-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
-.primary{background:var(--primary);color:#fff}
-.success{background:var(--success);color:#fff}
-.error{background:var(--error);color:#fff}
-.hidden{display:none}
+
+.bac-id{
+  font-weight:800;
+  font-size:16px;
+}
+
 .badge{
+  font-size:11px;
+  font-weight:800;
   padding:4px 8px;
-  border-radius:8px;
-  font-size:12px;
-  font-weight:700
+  border-radius:999px;
 }
-.badge.low{background:#fee2e2;color:#b91c1c}
+
+.badge.urgent{
+  background:#fee2e2;
+  color:#b91c1c;
+}
+
+.product{
+  font-size:14px;
+  font-weight:600;
+  color:#334155;
+}
+
+.progress{
+  height:10px;
+  background:#e5e7eb;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+  background:var(--primary);
+  transition:width .3s ease;
+}
+
+.qty{
+  font-size:13px;
+  color:#475569;
+}
+
+.missing{
+  font-weight:800;
+  color:var(--error);
+}
+
+button{
+  margin-top:8px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  background:var(--primary);
+  color:white;
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+.hidden{display:none}
+
+.empty{
+  text-align:center;
+  color:#64748b;
+  font-style:italic;
+}
+
+/* SCAN */
+#scanResult{
+  text-align:center;
+  font-weight:800;
+  margin-top:12px;
+}
 </style>
 </head>
 
@@ -63,69 +167,122 @@ button{
     <div class="subtitle">Préparation Bac Tampon</div>
   </div>
 
-  <div id="message" class="card hidden"></div>
-
+  <!-- LISTE BACS -->
   <div id="bacsList" class="card">
-    <h3>Bacs tampon à compléter</h3>
+    <h3>Bacs à compléter</h3>
     <div id="bacs"></div>
+  </div>
+
+  <!-- SCAN -->
+  <div id="scanScreen" class="card hidden">
+    <h3>Scanner le bac</h3>
+    <div id="qr-reader" style="width:100%;min-height:260px"></div>
+    <div id="scanResult"></div>
+    <button onclick="goBack()">⬅ Retour</button>
   </div>
 
 </div>
 
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
+const API_URL = "https://script.google.com/macros/s/TON_SCRIPT_ID/exec";
 
 let bacsData = [];
+let currentBac = null;
+let scanner = null;
 
+/* LOAD */
 async function loadBacs(){
-  try{
-    const res = await fetch(`${API_URL}?action=bacsTampon`);
-    const json = await res.json();
-
-    if(!json.success){
-      showMessage(json.error || "Erreur API", "error");
-      return;
-    }
-
-    bacsData = json.data;
-    renderBacs();
-
-  }catch(err){
-    showMessage("Erreur réseau", "error");
-  }
+  const res = await fetch(API_URL + "?action=bacsTampon");
+  bacsData = await res.json();
+  renderBacs();
 }
 
-function showMessage(txt, type){
-  const m = document.getElementById("message");
-  m.textContent = txt;
-  m.className = "card " + type;
-  m.classList.remove("hidden");
-  setTimeout(()=>m.classList.add("hidden"),3000);
-}
-
+/* RENDER */
 function renderBacs(){
   const div = document.getElementById("bacs");
   div.innerHTML = "";
 
   if(!bacsData || bacsData.length === 0){
-    div.innerHTML = "<em>Aucun bac à compléter 👍</em>";
+    div.innerHTML = '<div class="empty">Aucun bac à compléter 👍</div>';
     return;
   }
 
   bacsData.forEach(b=>{
-    const item = document.createElement("div");
-    item.className="list-item";
-    item.innerHTML = `
-      <strong>${b.BAC_ID}</strong><br>
-      ${b.PRODUIT_NOM}<br>
-      ${b.QTY_ACTUEL} / ${b.QTY_MAX}
-      <span class="badge low">À remplir</span>
+    const pct = Math.round((b.QTY_ACTUEL / b.QTY_MAX) * 100);
+    const missing = b.QTY_MAX - b.QTY_ACTUEL;
+
+    const card = document.createElement("div");
+    card.className = "bac-card";
+    card.innerHTML = `
+      <div class="bac-header">
+        <div class="bac-id">${b.BAC_ID}</div>
+        <span class="badge urgent">À remplir</span>
+      </div>
+
+      <div class="product">${b.PRODUIT_NOM}</div>
+
+      <div class="progress">
+        <div class="progress-bar" style="width:${pct}%"></div>
+      </div>
+
+      <div class="qty">
+        ${b.QTY_ACTUEL} / ${b.QTY_MAX}
+        — <span class="missing">${missing} manquant</span>
+      </div>
+
+      <button onclick="startScan('${b.BAC_ID}')">
+        📷 Scanner ce bac
+      </button>
     `;
-    div.appendChild(item);
+
+    div.appendChild(card);
   });
 }
 
-// INIT
+/* SCAN */
+function startScan(bacId){
+  currentBac = bacId;
+  document.getElementById("bacsList").classList.add("hidden");
+  document.getElementById("scanScreen").classList.remove("hidden");
+
+  scanner = new Html5Qrcode("qr-reader");
+  scanner.start(
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
+    onScanned
+  );
+}
+
+async function onScanned(code){
+  if(code !== currentBac) return;
+
+  await scanner.stop();
+  document.getElementById("scanResult").textContent = "✅ Bac validé";
+
+  await fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      action:"updateBac",
+      bac: currentBac
+    })
+  });
+
+  setTimeout(goBack,1200);
+}
+
+/* BACK */
+function goBack(){
+  if(scanner){
+    try{scanner.stop()}catch{}
+  }
+  document.getElementById("scanScreen").classList.add("hidden");
+  document.getElementById("bacsList").classList.remove("hidden");
+  loadBacs();
+}
+
+/* INIT */
 loadBacs();
 </script>
 
