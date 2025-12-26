@@ -90,9 +90,9 @@ let scannerRunning = false;
 let currentBac = null;
 let qty = 0;
 let qtyTarget = 0;
-let mode = "BAC"; // BAC | PRODUIT
+let mode = "BAC";
 
-/* ================= UTILS ================= */
+/* ================= MESSAGE ================= */
 function showMessage(txt,type){
   const m=document.getElementById("message");
   m.textContent=txt;
@@ -101,9 +101,12 @@ function showMessage(txt,type){
   setTimeout(()=>m.classList.add("hidden"),2000);
 }
 
-function safeStop(){
+/* ================= SAFE STOP ================= */
+function safeStopScanner(){
   if(scanner && scannerRunning){
-    scanner.stop().then(()=>scannerRunning=false).catch(()=>{});
+    scanner.stop()
+      .then(()=>{ scannerRunning=false; })
+      .catch(()=>{});
   }
 }
 
@@ -112,7 +115,7 @@ async function loadBacs(){
   try{
     const res = await fetch(API_URL+"?action=bacsTampon");
     const json = await res.json();
-    bacsData = Array.isArray(json)?json:json.data||[];
+    bacsData = Array.isArray(json) ? json : (json.data || []);
     renderBacs();
   }catch{
     showMessage("Erreur API","error");
@@ -160,27 +163,33 @@ function startBacScan(code,have,target){
 
 /* ================= START SCANNER ================= */
 function startScanner(){
-  scanner=new Html5Qrcode("qr-reader");
+  scanner = new Html5Qrcode("qr-reader");
+  scannerRunning = false;
+
   scanner.start(
-    {facingMode:"environment"},
-    {fps:10,qrbox:250},
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
     onScan,
     ()=>{}
-  ).then(()=>scannerRunning=true)
-   .catch(()=>{
-     showMessage("Caméra refusée","error");
-     back();
-   });
+  ).then(()=>{
+    scannerRunning = true;
+  }).catch(()=>{
+    showMessage("Caméra refusée","error");
+    back();
+  });
 }
 
 /* ================= ON SCAN ================= */
 function onScan(code){
   if(mode==="BAC"){
     if(code!==currentBac) return;
-    safeStop();
+
+    safeStopScanner();
     mode="PRODUIT";
+
     document.getElementById("scanTitle").textContent="Scanner les produits";
     document.getElementById("scanInfo").textContent=`${qty} / ${qtyTarget}`;
+
     startScanner();
   }
   else if(mode==="PRODUIT"){
@@ -198,16 +207,19 @@ function onScan(code){
     });
 
     if(qty>=qtyTarget){
-      safeStop();
+      safeStopScanner();
       showMessage("Bac rempli ✅","success");
-      setTimeout(()=>{ back(); loadBacs(); },1200);
+      setTimeout(()=>{
+        back();
+        loadBacs();
+      },1200);
     }
   }
 }
 
 /* ================= BACK ================= */
 function back(){
-  safeStop();
+  safeStopScanner();
   document.getElementById("scanScreen").classList.add("hidden");
   document.getElementById("bacsList").classList.remove("hidden");
 }
