@@ -39,6 +39,16 @@ body{
 }
 .list-item:last-child{border-bottom:none}
 
+.badge{
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:8px;
+  font-size:12px;
+  font-weight:700;
+}
+.badge.low{background:#fee2e2;color:#b91c1c}
+.badge.ok{background:#dcfce7;color:#15803d}
+
 button{
   width:100%;
   padding:12px;
@@ -67,133 +77,162 @@ button{
 
   <div id="message" class="card hidden center"></div>
 
-  <!-- LISTE BACS -->
-  <div id="screen-list" class="card">
+  <!-- LISTE -->
+  <div id="bacsList" class="card">
     <h3>Bacs à compléter</h3>
     <div id="bacs"></div>
   </div>
 
-  <!-- SCAN PRODUITS -->
-  <div id="screen-fill" class="card hidden">
-    <h3 id="bacTitle"></h3>
-    <p id="bacInfo" class="center"></p>
-    <button class="primary" onclick="scanProduct()">➕ Scanner produit</button>
-    <button class="success hidden" id="finishBtn" onclick="finishBac()">✅ Bac rempli</button>
+  <!-- SCAN -->
+  <div id="scanScreen" class="card hidden">
+    <h3 class="center">Scanner le bac</h3>
+    <div id="qr-reader" style="width:100%;min-height:260px"></div>
+    <div id="scanResult" class="center" style="margin-top:10px;font-weight:700"></div>
+    <button id="backBtn" class="primary">⬅ Retour</button>
   </div>
 
 </div>
 
+<script src="https://unpkg.com/html5-qrcode"></script>
+
 <script>
-/* ================= CONFIG ================= */
+/* ========= CONFIG ========= */
 const API_URL = "https://script.google.com/macros/s/AKfycbw4CJBufpFeLSzZvyOcbVA5fBIERBCppbKla-QMEQmZWXkY0ndBIAYAxGmm0nNXmqud/exec";
 
-/* ================= STATE ================= */
 let bacs = [];
+let scanner = null;
 let currentBac = null;
 
-/* ================= LOAD ================= */
+/* ========= LOAD ========= */
 async function loadBacs(){
   try{
     const res = await fetch(API_URL + "?action=bacsTampon");
     const data = await res.json();
 
-    if(!Array.isArray(data)) throw "API invalide";
+    // 🛡️ BLINDAGE TOTAL
+    if (Array.isArray(data)) {
+      bacs = data;
+    } else if (data && Array.isArray(data.data)) {
+      bacs = data.data;
+    } else {
+      console.error("Réponse API invalide :", data);
+      bacs = [];
+    }
 
-    bacs = data;
     renderBacs();
 
-  }catch(e){
-    console.error(e);
-    showMessage("Erreur chargement bacs","error");
+  } catch(err){
+    console.error(err);
+    showMessage("Erreur API", "error");
+    bacs = [];
+    renderBacs();
   }
 }
 
-/* ================= RENDER LIST ================= */
+/* ========= RENDER ========= */
 function renderBacs(){
   const div = document.getElementById("bacs");
   div.innerHTML = "";
 
-  const todo = bacs.filter(b => Number(b.QTY_ACTUEL) < Number(b.QTY_MAX));
-
-  if(todo.length === 0){
+  if (!bacs.length){
     div.innerHTML = "<em>Aucun bac à compléter 👍</em>";
     return;
   }
 
-  todo.forEach(b=>{
-    const d = document.createElement("div");
-    d.className = "list-item";
-    d.innerHTML = `
-      <strong>${b.BAC_ID}</strong><br>
-      ${b.PRODUIT_NOM}<br>
-      ${b.QTY_ACTUEL} / ${b.QTY_MAX}
-      <button class="primary" onclick="openBac('${b.BAC_ID}')">
-        📦 Ouvrir le bac
+  bacs.forEach(b => {
+    const bacCode = b.Bac_Code || b.BAC_ID || "BAC-?";
+    const produit = b.Produit_Label || b.PRODUIT_NOM || "Produit";
+    const having  = Number(b.Qty_Having ?? b.QTY_ACTUEL ?? 0);
+    const target  = Number(b.Qty_Target ?? b.QTY_MAX ?? 0);
+    const need    = having < target;
+
+    const item = document.createElement("div");
+    item.className = "list-item";
+    item.innerHTML = `
+      <strong>${bacCode}</strong><br>
+      ${produit}<br>
+      ${having} / ${target}
+      <span class="badge ${need ? 'low':'ok'}">
+        ${need ? 'À remplir' : 'OK'}
+      </span>
+      <button class="primary" onclick="startScan('${bacCode}')">
+        📷 Scanner ce bac
       </button>
     `;
-    div.appendChild(d);
+    div.appendChild(item);
   });
 }
 
-/* ================= OPEN BAC ================= */
-function openBac(id){
-  currentBac = bacs.find(b => b.BAC_ID === id);
+/* ========= SCAN ========= */
+function startScan(bac){
+  currentBac = bac;
 
-  document.getElementById("screen-list").classList.add("hidden");
-  document.getElementById("screen-fill").classList.remove("hidden");
+  document.getElementById("bacsList").classList.add("hidden");
+  document.getElementById("scanScreen").classList.remove("hidden");
+  document.getElementById("scanResult").textContent = "";
 
-  updateBacUI();
+  scanner = new Html5Qrcode("qr-reader");
+
+  scanner.start(
+    { facingMode:"environment" },
+    { fps:10, qrbox:250 },
+    code => {
+      if (code === currentBac){
+        scanner.stop();
+        document.getElementById("scanResult").textContent = "✅ Bac reconnu : " + code;
+        updateBac(code);
+      }
+    }
+  ).catch(err=>{
+    console.warn("Caméra refusée", err);
+    showMessage("Caméra refusée", "error");
+    back();
+  });
 }
 
-/* ================= UI UPDATE ================= */
-function updateBacUI(){
-  document.getElementById("bacTitle").textContent =
-    "Bac " + currentBac.BAC_ID;
+/* ========= UPDATE ========= */
+async function updateBac(code){
+  try{
+    await fetch(API_URL,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({
+        action:"updateBac",
+        bac:code
+      })
+    });
 
-  document.getElementById("bacInfo").textContent =
-    currentBac.PRODUIT_NOM + " — " +
-    currentBac.QTY_ACTUEL + " / " + currentBac.QTY_MAX;
+    showMessage("Bac mis à jour ✅","success");
 
-  if(Number(currentBac.QTY_ACTUEL) >= Number(currentBac.QTY_MAX)){
-    document.getElementById("finishBtn").classList.remove("hidden");
+    setTimeout(()=>{
+      back();
+      loadBacs();
+    },1000);
+
+  }catch(err){
+    console.error(err);
+    showMessage("Erreur mise à jour","error");
   }
 }
 
-/* ================= SCAN PRODUIT ================= */
-async function scanProduct(){
-  if(currentBac.QTY_ACTUEL >= currentBac.QTY_MAX) return;
-
-  currentBac.QTY_ACTUEL++;
-
-  await fetch(API_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      action:"incrementBac",
-      bac: currentBac.BAC_ID
-    })
-  });
-
-  updateBacUI();
+/* ========= UI ========= */
+function back(){
+  if(scanner) scanner.stop();
+  document.getElementById("scanScreen").classList.add("hidden");
+  document.getElementById("bacsList").classList.remove("hidden");
 }
 
-/* ================= FIN ================= */
-function finishBac(){
-  document.getElementById("screen-fill").classList.add("hidden");
-  document.getElementById("screen-list").classList.remove("hidden");
-  loadBacs();
-}
+document.getElementById("backBtn").onclick = back;
 
-/* ================= MESSAGE ================= */
 function showMessage(txt,type){
-  const m=document.getElementById("message");
-  m.textContent=txt;
-  m.className="card "+type;
+  const m = document.getElementById("message");
+  m.textContent = txt;
+  m.className = "card " + type;
   m.classList.remove("hidden");
   setTimeout(()=>m.classList.add("hidden"),2500);
 }
 
-/* ================= INIT ================= */
+/* ========= INIT ========= */
 loadBacs();
 </script>
 
