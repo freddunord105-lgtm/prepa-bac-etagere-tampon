@@ -3,138 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SAMEMO — Dashboard</title>
-
-<!-- PWA -->
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f766e">
+<title>SAMEMO — Scanner</title>
 
 <style>
-:root{
-  --primary:#0f766e;
-  --bg:#f8fafc;
-  --card:#ffffff;
-  --border:#e5e7eb;
-}
-*{box-sizing:border-box}
 body{
   margin:0;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
-  background:var(--bg);
-}
-.app{
-  max-width:480px;
-  margin:auto;
-  padding:16px;
-}
-.header{
-  text-align:center;
-  margin-bottom:20px;
-}
-.logo{
-  font-size:32px;
-  font-weight:900;
-  color:var(--primary);
-}
-.subtitle{
-  font-size:14px;
-  color:#475569;
-}
-
-.card{
-  background:var(--card);
-  border-radius:16px;
-  padding:18px;
-  margin-bottom:16px;
-  box-shadow:0 10px 25px rgba(0,0,0,.06);
-}
-
-.card h3{
-  margin:0 0 10px 0;
-}
-
-button{
-  width:100%;
-  padding:16px;
-  margin-top:10px;
-  border:none;
-  border-radius:14px;
-  font-size:16px;
-  font-weight:800;
-  cursor:pointer;
-  background:var(--primary);
+  background:#0f172a;
   color:#fff;
+  font-family:system-ui,sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
 }
-
-.small{
-  font-size:13px;
-  color:#475569;
-  margin-top:6px;
-}
-.footer{
+.box{
   text-align:center;
-  font-size:12px;
-  color:#64748b;
-  margin-top:24px;
+}
+h1{
+  font-size:28px;
+  margin-bottom:8px;
+}
+p{
+  opacity:.8;
+}
+.error{
+  color:#f87171;
+  margin-top:12px;
 }
 </style>
 </head>
 
 <body>
-
-<div class="app">
-
-  <!-- HEADER -->
-  <div class="header">
-    <div class="logo">SAMEMO</div>
-    <div class="subtitle">Logistique locale intelligente</div>
-  </div>
-
-  <!-- ACTE 1 -->
-  <div class="card">
-    <h3>📦 Acte 1 — Préparation commandes</h3>
-    <p class="small">
-      Préparer les commandes clients avant livraison
-    </p>
-    <button onclick="go('prepa-cmd.html')">
-      Ouvrir
-    </button>
-  </div>
-
-  <!-- ACTE 2 -->
-  <div class="card">
-    <h3>🧺 Acte 2 — Bacs tampon</h3>
-    <p class="small">
-      Remplir et maintenir les bacs de la zone tampon
-    </p>
-    <button onclick="go('prepa-bac-tampon.html')">
-      Ouvrir
-    </button>
-  </div>
-
-  <!-- ACTE 3 -->
-  <div class="card">
-    <h3>🚚 Acte 3 — Livraison</h3>
-    <p class="small">
-      Scanner bac, livrer, déposer BAL ou main propre
-    </p>
-    <button onclick="go('livraison.html')">
-      Ouvrir
-    </button>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
-    SAMEMO © 2025 — Garage Ready ⚡
-  </div>
-
+<div class="box">
+  <h1>SAMEMO</h1>
+  <p>Scanne un code pour continuer</p>
+  <div id="reader" style="width:280px;margin:auto"></div>
+  <div id="msg" class="error"></div>
 </div>
 
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script>
-function go(page){
-  window.location.href = page;
-}
-</script>
+const msg = document.getElementById("msg");
 
+function route(code){
+  code = code.trim();
+
+  // 📦 COMMANDE
+  if(code.startsWith("CMD-")){
+    location.href = `/prepa-cmd.html?cmd=${encodeURIComponent(code)}`;
+    return;
+  }
+
+  // 🧺 BAC TAMPON
+  if(code.startsWith("BAC-")){
+    location.href = `/prepa-bac.html?bac=${encodeURIComponent(code)}`;
+    return;
+  }
+
+  // 👤 RÔLE
+  if(code.startsWith("ROLE:")){
+    const role = code.split(":")[1];
+    localStorage.setItem("role", role);
+    location.href = `/prepa-${role.toLowerCase()}.html`;
+    return;
+  }
+
+  // 🏷️ PRODUIT (EAN)
+  if(/^\d{8,14}$/.test(code)){
+    location.href = `/scan-produit.html?ean=${code}`;
+    return;
+  }
+
+  msg.textContent = "Code non reconnu";
+}
+
+const scanner = new Html5Qrcode("reader");
+
+scanner.start(
+  { facingMode:"environment" },
+  { fps:10, qrbox:250 },
+  code => {
+    scanner.stop();
+    route(code);
+  },
+  () => {}
+).catch(err=>{
+  msg.textContent = "Caméra refusée";
+});
+</script>
 </body>
 </html>
