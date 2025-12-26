@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prépa Bac Tampon — SAMEMO</title>
+
+<style>
+:root{
+  --primary:#0f766e;
+  --success:#16a34a;
+  --error:#dc2626;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --border:#e5e7eb;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,sans-serif;
+  background:var(--bg);
+}
+.app{
+  max-width:480px;
+  margin:auto;
+  padding:16px;
+}
+.header{text-align:center;margin-bottom:16px}
+.logo{font-size:26px;font-weight:900;color:var(--primary)}
+.subtitle{font-size:14px;color:#475569}
+
+.card{
+  background:var(--card);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:16px;
+  box-shadow:0 10px 25px rgba(0,0,0,.06);
+}
+
+h2{text-align:center;margin:0 0 12px}
+.hidden{display:none}
+
+.badge{
+  display:inline-block;
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:13px;
+}
+.badge.todo{background:#fff7ed;color:#9a3412}
+.badge.ok{background:#ecfdf5;color:#065f46}
+
+.list-item{
+  border-bottom:1px solid var(--border);
+  padding:12px 0;
+}
+
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:800;
+  cursor:pointer;
+  margin-top:8px;
+}
+.primary{background:var(--primary);color:#fff}
+.success{background:var(--success);color:#fff}
+.error{background:var(--error);color:#fff}
+
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  font-weight:700;
+}
+
+.progress{
+  text-align:center;
+  font-weight:800;
+  margin-bottom:12px;
+}
+
+.fake-scan{
+  background:#e5e7eb;
+  font-size:13px;
+}
+.done{color:var(--success);font-weight:900}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="logo">SAMEMO</div>
+  <div class="subtitle">Préparation Bac Tampon</div>
+</div>
+
+<!-- ÉCRAN SCAN BAC -->
+<div id="screen-bac" class="card">
+  <h2>🧺 Scanner un bac tampon</h2>
+  <input id="bacCode" readonly placeholder="QR du bac">
+  <button class="fake-scan" onclick="fakeScanBac()">Simuler scan BAC-T-01</button>
+</div>
+
+<!-- ÉCRAN REMPLISSAGE -->
+<div id="screen-fill" class="card hidden">
+  <h2 id="bacTitle"></h2>
+  <div id="progress" class="progress"></div>
+  <div id="products"></div>
+
+  <button id="validateBtn" class="success hidden" onclick="finishBac()">
+    ✅ Bac rempli
+  </button>
+</div>
+
+<!-- ÉCRAN FIN -->
+<div id="screen-done" class="card hidden">
+  <h2>🎉 Bac prêt</h2>
+  <p style="text-align:center;font-weight:700">
+    Le bac est rempli et prêt à l’usage
+  </p>
+  <button class="primary" onclick="location.reload()">🔁 Nouveau bac</button>
+</div>
+
+</div>
+
+<script>
+/* ================== MOCK DATA ================== */
+/* Plus tard : API Google Apps Script */
+
+const BAC_CONTENT = {
+  "BAC-T-01":{
+    "P001":{ name:"Produit A", expected:5 },
+    "P002":{ name:"Produit B", expected:3 }
+  }
+};
+
+/* ================== STATE ================== */
+
+let currentBac=null;
+let content={};
+let filled={};
+
+/* ================== DOM ================== */
+
+const screenBac  = document.getElementById("screen-bac");
+const screenFill = document.getElementById("screen-fill");
+const screenDone = document.getElementById("screen-done");
+
+const bacCodeInput = document.getElementById("bacCode");
+const bacTitle = document.getElementById("bacTitle");
+const productsDiv = document.getElementById("products");
+const progressDiv = document.getElementById("progress");
+const validateBtn = document.getElementById("validateBtn");
+
+/* ================== LOGIC ================== */
+
+function fakeScanBac(){
+  startBac("BAC-T-01");
+}
+
+function startBac(code){
+  currentBac=code;
+  bacCodeInput.value=code;
+
+  content=JSON.parse(JSON.stringify(BAC_CONTENT[code]));
+  filled={};
+  Object.keys(content).forEach(p=>filled[p]=0);
+
+  screenBac.classList.add("hidden");
+  screenFill.classList.remove("hidden");
+
+  bacTitle.textContent=`Bac ${code}`;
+  render();
+}
+
+function render(){
+  productsDiv.innerHTML="";
+  let total=0, done=0;
+
+  for(const c in content){
+    total+=content[c].expected;
+    done+=filled[c];
+
+    const ok = filled[c]>=content[c].expected;
+
+    const d=document.createElement("div");
+    d.className="list-item";
+    d.innerHTML=`
+      <strong>${content[c].name}</strong><br>
+      ${filled[c]} / ${content[c].expected}
+      ${ok?'<span class="done"> ✔</span>':""}
+      <br>
+      <button class="fake-scan" onclick="scanProduct('${c}')">
+        Scanner ${c}
+      </button>
+    `;
+    productsDiv.appendChild(d);
+  }
+
+  progressDiv.textContent=`Remplissage : ${done} / ${total}`;
+
+  validateBtn.classList.toggle("hidden", done!==total);
+}
+
+function scanProduct(code){
+  if(filled[code] < content[code].expected){
+    filled[code]++;
+    render();
+  }
+}
+
+function finishBac(){
+  screenFill.classList.add("hidden");
+  screenDone.classList.remove("hidden");
+}
+
+/* ================== END ================== */
+</script>
+</body>
+</html>
