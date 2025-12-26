@@ -192,8 +192,8 @@ button{
 <script src="https://unpkg.com/html5-qrcode"></script>
 <script>
 /* ================= CONFIG ================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbxQbSVsiHxOdFJg58OqhABq1dPQu1ykzkuhOwr_Gd5oclFdRSx5TwZt51WSOJVML14s/exec";
-
+const API_GET_BACS = "/api/bacsTampon";
+const API_POST_UPDATE_BAC = "/api/updateBac";
 /* ================= STATE ================= */
 let bacsData = [];
 let currentBacObj = null;
@@ -241,7 +241,7 @@ function showScreen(which){
 /* ================= LOAD BACS ================= */
 async function loadBacs(){
   try{
-    const res = await fetch(API_URL + "?action=bacsTampon", { cache:"no-store" });
+    const res = await fetch(API_GET_BACS, { cache:"no-store" });
     const json = await res.json();
 
     if(Array.isArray(json)) bacsData = json;
