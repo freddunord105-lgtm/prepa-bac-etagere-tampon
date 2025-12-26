@@ -206,8 +206,15 @@ let productScannerRunning = false;
 
 let needToAdd = 0;     // quantité à ajouter (pour arriver à qtyMax)
 let addedCount = 0;    // nombre de scans validés
+
+// anti double scan basique
 let lastScan = {code:null, time:0};
-const COOLDOWN_MS = 900;
+const COOLDOWN_MS = 250; // plus petit: on gère surtout via "lock disparition"
+
+// ✅ OPTI: verrou "disparition obligatoire"
+let productLocked = false;          // bloqué après un scan validé
+let noDetectStreak = 0;             // nb de frames sans détection
+const UNLOCK_AFTER_FAILS = 8;       // ~0.8s à fps=10 (ajuste si besoin)
 
 /* ================= UI HELPERS ================= */
 const $ = (id) => document.getElementById(id);
@@ -237,7 +244,6 @@ async function loadBacs(){
     const res = await fetch(API_URL + "?action=bacsTampon", { cache:"no-store" });
     const json = await res.json();
 
-    // accepte: [ ... ] ou { data:[ ... ] }
     if(Array.isArray(json)) bacsData = json;
     else if(json && Array.isArray(json.data)) bacsData = json.data;
     else {
@@ -266,13 +272,12 @@ function renderBacs(){
   }
 
   bacsData.forEach(b=>{
-    // compat champs
-    const bacId     = b.BAC_ID ?? b.Bac_Code ?? "BAC-?";
-    const qrCode    = b.QR_CODE ?? bacId; // IMPORTANT
-    const prodCode  = b.PRODUIT_CODE ?? b.Product_Code ?? "";
-    const prodName  = b.PRODUIT_NOM ?? b.Produit_Label ?? "Produit";
-    const qtyHaving = Number(b.QTY_ACTUEL ?? b.Qty_Having ?? 0);
-    const qtyMax    = Number(b.QTY_MAX ?? b.Qty_Target ?? 0);
+    const bacId     = b.BAC_ID ?? "BAC-?";
+    const qrCode    = b.QR_CODE ?? bacId;
+    const prodCode  = b.PRODUIT_CODE ?? "";
+    const prodName  = b.PRODUIT_NOM ?? "Produit";
+    const qtyHaving = Number(b.QTY_ACTUEL ?? 0);
+    const qtyMax    = Number(b.QTY_MAX ?? 0);
 
     const needFill  = qtyHaving < qtyMax;
 
@@ -314,7 +319,6 @@ function openBacScan(){
 }
 
 $("btnStartBacScan").onclick = async () => {
-  // demande permission AVANT html5-qrcode (sinon erreurs en chaîne)
   try{
     await navigator.mediaDevices.getUserMedia({ video:true });
   }catch(err){
@@ -352,7 +356,6 @@ function onBacScanned(codeText){
   const expectedId = String(currentBacObj.bacId);
   const expectedQr = String(currentBacObj.qrCode);
 
-  // accepte scan == BAC_ID ou QR_CODE
   if(codeText !== expectedId && codeText !== expectedQr){
     $("bacScanResult").textContent = "❌ Mauvais bac : " + codeText;
     $("bacScanResult").style.color = "#dc2626";
@@ -372,7 +375,6 @@ function stopBacScannerSafe(){
   }else{
     bacScannerRunning = false;
   }
-  // on ne clear pas le div, sinon html5-qrcode peut replanter sur iOS
 }
 
 /* ================= SCAN PRODUITS ================= */
@@ -383,6 +385,10 @@ function openProductScan(){
 
   needToAdd = Math.max(0, qtyMax - qtyHaving);
   addedCount = 0;
+
+  // reset lock
+  productLocked = false;
+  noDetectStreak = 0;
 
   $("productInfo").innerHTML = `
     <div style="font-weight:900">Bac : ${bacId}</div>
@@ -426,11 +432,23 @@ $("btnStartProductScan").onclick = async () => {
   productScanner = new Html5Qrcode("qr-reader-product");
   productScannerRunning = false;
 
+  // ✅ OPTI: on utilise le callback "failure" pour déverrouiller quand le code DISPARAÎT
   productScanner.start(
     { facingMode:"environment" },
     { fps:10, qrbox:250 },
     (codeText) => onProductScanned(codeText),
-    () => {}
+    () => {
+      // appelé quand aucun code n'est détecté sur une frame
+      if (productLocked) {
+        noDetectStreak++;
+        if (noDetectStreak >= UNLOCK_AFTER_FAILS) {
+          productLocked = false;
+          noDetectStreak = 0;
+          $("productScanMsg").textContent = "📌 OK, tu peux rescanner";
+          $("productScanMsg").style.color = "#0f172a";
+        }
+      }
+    }
   ).then(()=>{
     productScannerRunning = true;
   }).catch((err)=>{
@@ -445,6 +463,16 @@ function onProductScanned(codeText){
   const now = Date.now();
   if(codeText === lastScan.code && (now-lastScan.time) < COOLDOWN_MS) return;
   lastScan = {code:codeText, time:now};
+
+  // 🔒 bloque tant que le produit n’a pas DISPARU de la caméra
+  if (productLocked) {
+    $("productScanMsg").textContent = "⛔ Éloigne le produit puis rescanne";
+    $("productScanMsg").style.color = "#f59e0b";
+    return;
+  }
+
+  // si on détecte quelque chose, reset streak (on ne déverrouille que sur 'failure')
+  noDetectStreak = 0;
 
   const expectedProd = String(currentBacObj.prodCode || "");
   if(!expectedProd){
@@ -466,14 +494,22 @@ function onProductScanned(codeText){
   }
 
   addedCount++;
+
+  // 🔒 verrouille dès qu’un scan est validé (jusqu’à disparition)
+  productLocked = true;
+  noDetectStreak = 0;
+
   const newHaving = currentBacObj.qtyHaving + addedCount;
   const remaining = Math.max(0, currentBacObj.qtyMax - newHaving);
 
   $("kpiHaving").textContent = newHaving;
   $("kpiNeed").textContent = remaining;
 
-  $("productScanMsg").textContent = `✅ OK (${addedCount}/${needToAdd})`;
+  $("productScanMsg").textContent = `✅ OK (${addedCount}/${needToAdd}) — éloigne pour rescanner`;
   $("productScanMsg").style.color = "#16a34a";
+
+  // feedback tactile (iOS/Android)
+  if (navigator.vibrate) navigator.vibrate(60);
 
   if(remaining === 0){
     stopProductScannerSafe();
@@ -483,6 +519,9 @@ function onProductScanned(codeText){
 }
 
 function stopProductScannerSafe(){
+  productLocked = false;
+  noDetectStreak = 0;
+
   if(productScanner && productScannerRunning){
     productScanner.stop().catch(()=>{}).finally(()=>{ productScannerRunning = false; });
   }else{
@@ -491,7 +530,7 @@ function stopProductScannerSafe(){
 }
 
 /* ================= FINISH (POST updateBac) ================= */
-/* ✅ CORRIGÉ CORS : POST "simple" form-urlencoded (pas JSON, pas headers) */
+/* Ici tu laisses ton POST actuel (via /api/updateBac si tu passes par Cloudflare Function) */
 $("btnFinish").onclick = async () => {
   try{
     const body = new URLSearchParams();
@@ -499,12 +538,19 @@ $("btnFinish").onclick = async () => {
     body.set("bac", currentBacObj.bacId);
     body.set("qtyAdded", String(addedCount));
 
+    // ✅ Si tu utilises Cloudflare Function:
+    // const res = await fetch("/api/updateBac", { method:"POST", body });
+    // ✅ Sinon (direct GAS) (si chez toi ça marche via proxy, garde pareil):
     const res = await fetch("/api/updateBac", { method:"POST", body });
 
     const txt = await res.text();
     let r = {};
     try { r = JSON.parse(txt); }
-    catch(e){ r = { success:false, error:"Réponse non JSON", raw: txt }; }
+    catch(e){
+      toast("❌ Réponse non JSON", "error");
+      console.log("RAW:", txt);
+      return;
+    }
 
     if(r && r.success === false){
       toast("❌ " + (r.error || "Erreur serveur"), "error");
